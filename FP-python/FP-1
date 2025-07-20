@@ -1,0 +1,221 @@
+import random
+import time
+import sys
+
+class DetectiveGame:
+    def __init__(self):
+        self.player_name = ""
+        self.evidence = []
+        self.suspects = {
+            "Chef Marco": {"alibi": "cooking", "motive": "victim criticized restaurant", "guilty": False},
+            "Dr. Sarah": {"alibi": "hospital rounds", "motive": "medical malpractice lawsuit", "guilty": False},
+            "Butler James": {"alibi": "cleaning", "motive": "inheritance dispute", "guilty": False}
+        }
+        self.locations = ["Library", "Kitchen", "Garden", "Study", "Basement"]
+        self.clues_found = 0
+        self.max_clues = 5
+        
+        # Randomly assign the guilty party
+        guilty_suspect = random.choice(list(self.suspects.keys()))
+        self.suspects[guilty_suspect]["guilty"] = True
+        
+    def typewriter_print(self, text, delay=0.03):
+        """Print text with typewriter effect"""
+        for char in text:
+            sys.stdout.write(char)
+            sys.stdout.flush()
+            time.sleep(delay)
+        print()
+    
+    def intro(self):
+        self.typewriter_print("🕵️ WELCOME TO MYSTERY MANOR 🕵️")
+        self.typewriter_print("=" * 40)
+        self.player_name = input("What's your name, detective? ").strip()
+        
+        self.typewriter_print(f"\nWelcome, Detective {self.player_name}!")
+        self.typewriter_print("\nYou've been called to investigate a mysterious disappearance at Blackwood Manor.")
+        self.typewriter_print("The wealthy owner, Mr. Blackwood, has vanished without a trace.")
+        self.typewriter_print("Three suspects remain in the house, each with secrets to hide...")
+        
+    def show_menu(self):
+        print("\n" + "="*50)
+        print("🔍 DETECTIVE OPTIONS:")
+        print("1. 🏠 Search a location")
+        print("2. 👥 Interview a suspect") 
+        print("3. 📋 Review evidence")
+        print("4. 🎯 Make an accusation")
+        print("5. 🚪 Quit")
+        print("="*50)
+        
+    def search_location(self):
+        if self.clues_found >= self.max_clues:
+            print("🔍 You've searched everywhere! Time to solve the case.")
+            return
+            
+        print("\n🏠 Where would you like to search?")
+        for i, location in enumerate(self.locations, 1):
+            print(f"{i}. {location}")
+            
+        try:
+            choice = int(input("Choose a location (number): ")) - 1
+            if 0 <= choice < len(self.locations):
+                location = self.locations[choice]
+                self.typewriter_print(f"\n🔍 Searching the {location}...")
+                
+                # Random chance to find evidence
+                if random.random() > 0.3:  # 70% chance to find something
+                    clues = [
+                        "a torn piece of fabric",
+                        "mysterious footprints",
+                        "a cryptic note",
+                        "strange scratches on the wall",
+                        "a hidden key",
+                        "blood stains (fake, it's ketchup!)",
+                        "a suspicious photograph",
+                        "an unusual smell lingering"
+                    ]
+                    
+                    clue = random.choice(clues)
+                    self.evidence.append(f"{clue} (found in {location})")
+                    self.clues_found += 1
+                    self.typewriter_print(f"💡 You found: {clue}!")
+                else:
+                    self.typewriter_print("🤷 Nothing interesting here...")
+            else:
+                print("❌ Invalid choice!")
+        except ValueError:
+            print("❌ Please enter a valid number!")
+    
+    def interview_suspect(self):
+        print("\n👥 Who would you like to interview?")
+        suspects_list = list(self.suspects.keys())
+        for i, suspect in enumerate(suspects_list, 1):
+            print(f"{i}. {suspect}")
+            
+        try:
+            choice = int(input("Choose a suspect (number): ")) - 1
+            if 0 <= choice < len(suspects_list):
+                suspect = suspects_list[choice]
+                self.typewriter_print(f"\n💬 Interviewing {suspect}...")
+                
+                suspect_data = self.suspects[suspect]
+                
+                # Generate random responses
+                responses = [
+                    f"I was {suspect_data['alibi']} all evening!",
+                    f"Why would I hurt Mr. Blackwood? Sure, there was the issue about {suspect_data['motive']}, but...",
+                    "I heard strange noises coming from upstairs around midnight.",
+                    "You should talk to the others - they're acting very suspicious!",
+                    "I saw someone lurking in the shadows earlier.",
+                ]
+                
+                if suspect_data["guilty"]:
+                    responses.extend([
+                        "I... I don't remember exactly where I was.",
+                        "Look, there are things you don't understand about this place!",
+                    ])
+                
+                response = random.choice(responses)
+                self.typewriter_print(f"'{response}'")
+                
+                # Add to evidence
+                self.evidence.append(f"{suspect}: {response}")
+                
+            else:
+                print("❌ Invalid choice!")
+        except ValueError:
+            print("❌ Please enter a valid number!")
+    
+    def review_evidence(self):
+        print("\n📋 EVIDENCE COLLECTED:")
+        print("=" * 30)
+        if not self.evidence:
+            print("No evidence collected yet!")
+        else:
+            for i, item in enumerate(self.evidence, 1):
+                print(f"{i}. {item}")
+        print("=" * 30)
+    
+    def make_accusation(self):
+        print("\n🎯 WHO DO YOU THINK IS RESPONSIBLE?")
+        suspects_list = list(self.suspects.keys())
+        for i, suspect in enumerate(suspects_list, 1):
+            print(f"{i}. {suspect}")
+        print(f"{len(suspects_list) + 1}. I need more evidence")
+            
+        try:
+            choice = int(input("Make your accusation: ")) - 1
+            if choice == len(suspects_list):
+                print("🔍 Keep investigating!")
+                return False
+            elif 0 <= choice < len(suspects_list):
+                accused = suspects_list[choice]
+                return self.reveal_solution(accused)
+            else:
+                print("❌ Invalid choice!")
+                return False
+        except ValueError:
+            print("❌ Please enter a valid number!")
+            return False
+    
+    def reveal_solution(self, accused):
+        self.typewriter_print("\n🥁 DRUMROLL PLEASE...")
+        time.sleep(2)
+        
+        # Find the guilty party
+        guilty_party = None
+        for suspect, data in self.suspects.items():
+            if data["guilty"]:
+                guilty_party = suspect
+                break
+        
+        if accused == guilty_party:
+            self.typewriter_print(f"🎉 CORRECT! {accused} was indeed responsible!")
+            self.typewriter_print(f"The motive was: {self.suspects[accused]['motive']}")
+            self.typewriter_print("You solved the case! Mr. Blackwood has been found safe and sound.")
+            self.typewriter_print("🏆 Excellent detective work!")
+        else:
+            self.typewriter_print(f"❌ WRONG! {accused} was innocent.")
+            self.typewriter_print(f"The real culprit was {guilty_party}!")
+            self.typewriter_print(f"Their motive: {self.suspects[guilty_party]['motive']}")
+            self.typewriter_print("💡 Better luck next time, detective!")
+        
+        return True
+    
+    def play(self):
+        self.intro()
+        game_over = False
+        
+        while not game_over:
+            self.show_menu()
+            try:
+                choice = input("What's your next move? ").strip()
+                
+                if choice == "1":
+                    self.search_location()
+                elif choice == "2":
+                    self.interview_suspect()
+                elif choice == "3":
+                    self.review_evidence()
+                elif choice == "4":
+                    game_over = self.make_accusation()
+                elif choice == "5":
+                    self.typewriter_print("👋 Thanks for playing! The mystery remains unsolved...")
+                    game_over = True
+                else:
+                    print("❌ Invalid choice! Please select 1-5.")
+                    
+            except KeyboardInterrupt:
+                print("\n\n👋 Game interrupted! Thanks for playing!")
+                break
+        
+        play_again = input("\n🎮 Play again? (y/n): ").lower().strip()
+        if play_again == 'y':
+            print("\n" + "="*50)
+            DetectiveGame().play()
+
+# Start the game!
+if __name__ == "__main__":
+    print("🎮 Starting Mystery Detective Adventure Game...")
+    game = DetectiveGame()
+    game.play()
