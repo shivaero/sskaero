@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDPS Robotics Lab Feedback System</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: white;
+}
+
+.container {
+    width: 95%;
+    max-width: 750px;
+    padding: 30px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+h1 { text-align: center; }
+
+.subtitle {
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.8;
+    margin-bottom: 15px;
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 10px auto;
+    width: 90px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+textarea { resize: none; height: 90px; }
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #00c6ff;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover { background: #0072ff; }
+
+.admin-btn { background: #ff4b2b; }
+.logout-btn { background: red; }
+
+.hidden { display: none; }
+
+.feedback-item {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.stars {
+    display: flex;
+    gap: 5px;
+    font-size: 25px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+.star { color: gray; }
+.star.selected { color: gold; }
+
+canvas { margin-top: 20px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; }
+</style>
+</head>
+
+<body>
+
+<!-- USER PAGE -->
+<div class="container" id="userPage">
+
+<img src="https://via.placeholder.com/90" class="logo">
+
+<h1>GDPS Robotics Lab Feedback System</h1>
+<div class="subtitle">Developed by Students of GDPS Robotics Lab</div>
+
+<input type="text" id="name" placeholder="Your Name (Optional)">
+<input type="email" id="email" placeholder="Your Email (Optional)">
+<textarea id="message" placeholder="Your Feedback (Optional)"></textarea>
+
+<label>Rate Us:</label>
+<div class="stars">
+    <span class="star" onclick="setRating(1)">★</span>
+    <span class="star" onclick="setRating(2)">★</span>
+    <span class="star" onclick="setRating(3)">★</span>
+    <span class="star" onclick="setRating(4)">★</span>
+    <span class="star" onclick="setRating(5)">★</span>
+</div>
+
+<button onclick="submitFeedback()">Submit Feedback</button>
+<button class="admin-btn" onclick="showAdminLogin()">Admin Login</button>
+
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="container hidden" id="adminLoginPage">
+<h1>Admin Login</h1>
+<input type="password" id="adminPassword" placeholder="Enter Admin Password">
+<button onclick="checkAdminPassword()">Login</button>
+<button onclick="goBack()">Back</button>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="container hidden" id="adminDashboard">
+<h1>Admin Dashboard</h1>
+
+<div id="feedbackList"></div>
+
+<canvas id="ratingChart"></canvas>
+
+<button class="logout-btn" onclick="adminLogout()">Logout</button>
+</div>
+
+<script>
+
+let rating = 0;
+let chartInstance = null;
+
+function setRating(value) {
+    rating = value;
+    let stars = document.querySelectorAll(".star");
+    stars.forEach((star, index) => {
+        star.classList.toggle("selected", index < value);
+    });
+}
+
+function submitFeedback() {
+
+    let feedback = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        message: document.getElementById("message").value,
+        rating: rating,
+        time: new Date().toLocaleString()
+    };
+
+    let feedbacks = JSON.parse(localStorage.getItem("gdpsFeedback")) || [];
+    feedbacks.push(feedback);
+    localStorage.setItem("gdpsFeedback", JSON.stringify(feedbacks));
+
+    alert("Feedback Submitted Successfully!");
+
+    document.getElementById("name").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("message").value = "";
+    setRating(0);
+}
+
+function showAdminLogin() {
+    document.getElementById("userPage").classList.add("hidden");
+    document.getElementById("adminLoginPage").classList.remove("hidden");
+}
+
+function goBack() {
+    document.getElementById("adminLoginPage").classList.add("hidden");
+    document.getElementById("userPage").classList.remove("hidden");
+}
+
+function checkAdminPassword() {
+    let password = document.getElementById("adminPassword").value.trim();
+
+    if(password === "gdps@2023") {
+        document.getElementById("adminLoginPage").classList.add("hidden");
+        document.getElementById("adminDashboard").classList.remove("hidden");
+        loadFeedback();
+        generateChart();
+    } else {
+        alert("Wrong Password!");
+    }
+}
+
+function loadFeedback() {
+    let feedbackList = document.getElementById("feedbackList");
+    feedbackList.innerHTML = "";
+
+    let feedbacks = JSON.parse(localStorage.getItem("gdpsFeedback")) || [];
+
+    feedbacks.forEach((item) => {
+        feedbackList.innerHTML += `
+        <div class="feedback-item">
+            <strong>Name:</strong> ${item.name || "Not Provided"} <br>
+            <strong>Message:</strong> ${item.message || "No Message"} <br>
+            <strong>Rating:</strong> ${"⭐".repeat(item.rating || 0)} <br>
+        </div>
+        `;
+    });
+}
+
+function generateChart() {
+
+    let feedbacks = JSON.parse(localStorage.getItem("gdpsFeedback")) || [];
+    let ratingCounts = [0,0,0,0,0];
+
+    feedbacks.forEach(item => {
+        if(item.rating > 0) ratingCounts[item.rating - 1]++;
+    });
+
+    let ctx = document.getElementById('ratingChart').getContext('2d');
+
+    if(chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+            datasets: [{
+                label: 'Number of Ratings',
+                data: ratingCounts
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { labels: { color: 'white' } }
+            },
+            scales: {
+                x: { ticks: { color: 'white' } },
+                y: { ticks: { color: 'white' }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+function adminLogout() {
+    document.getElementById("adminDashboard").classList.add("hidden");
+    document.getElementById("userPage").classList.remove("hidden");
+    document.getElementById("adminPassword").value = "";
+}
+
+</script>
+
+</body>
+</html>
